@@ -1,25 +1,16 @@
 # Asistente de Seguimiento de Compras y Pagos
 
-Prueba de concepto de un asistente conversacional capaz de registrar y consultar información básica de un flujo de compras mediante lenguaje natural.
+Prueba de concepto de un agente conversacional para registrar, consultar y dar seguimiento a un flujo simplificado de compras y pagos.
 
-El sistema utiliza:
+La aplicación está dirigida principalmente a personal de **gerencia administrativa y operaciones de compras** que necesita consultar la relación entre proveedores, requisiciones, órdenes de compra, facturas y pagos sin navegar manualmente entre distintos documentos.
 
-* Python
-* Streamlit
-* LangChain
-* OpenAI
-* Model Context Protocol (MCP)
-* FastMCP
-* SQLite
-* LangGraph para memoria conversacional
-
-> Esta aplicación es una prueba de concepto académica. No pretende sustituir un ERP, un sistema contable ni una plataforma productiva de cuentas por pagar.
+> Este proyecto es una prueba de concepto académica. No es un ERP, un sistema contable ni una plataforma productiva de cuentas por pagar.
 
 ---
 
-## Descripción
+## Problema
 
-La información relacionada con una compra suele estar distribuida entre diferentes documentos:
+En un proceso de compras, la información suele estar distribuida entre varios documentos:
 
 ```text
 Proveedor
@@ -35,58 +26,62 @@ Vencimiento
 Pago
 ```
 
-Esta PoC permite registrar una versión simplificada de esos documentos y consultar su trazabilidad mediante una interfaz conversacional.
+Esto dificulta responder rápidamente preguntas como:
 
-El agente interpreta la solicitud del usuario, selecciona la tool MCP adecuada, consulta o modifica la base de datos y presenta una respuesta comprensible junto con evidencia de las tools utilizadas.
+* ¿Cuál es el estado de una requisición?
+* ¿Qué proveedor fue utilizado?
+* ¿Existe una orden de compra?
+* ¿La orden ya tiene factura?
+* ¿Cuándo vence la factura?
+* ¿La factura ya fue pagada?
+* ¿Qué pagos vencen próximamente?
 
----
+El agente permite consultar y registrar esta información mediante lenguaje natural, utilizando exclusivamente tools expuestas por un servidor MCP.
 
-## Funcionalidades
+### Usuario principal
 
-El asistente permite:
+El usuario principal es:
 
-* Registrar proveedores.
-* Consultar proveedores.
-* Crear requisiciones.
-* Consultar requisiciones.
-* Crear órdenes de compra.
-* Registrar facturas.
-* Calcular fechas de vencimiento.
-* Registrar pagos completos.
-* Consultar la trazabilidad completa de una compra.
-* Consultar facturas próximas a vencer.
-* Mantener referencias dentro de una misma conversación.
-* Mostrar las tools MCP utilizadas.
-* Solicitar confirmación antes de cualquier operación de escritura.
+* Gerencia administrativa.
+* Personal operativo de compras.
+* Usuario evaluador de la prueba de concepto.
 
----
+### Necesidad que aborda
 
-## Alcance
+La aplicación busca demostrar que un agente de IA puede:
 
-### Incluido
+1. Interpretar solicitudes en lenguaje natural.
+2. Seleccionar una tool MCP.
+3. Consultar información persistida.
+4. Ejecutar operaciones controladas.
+5. Mantener referencias dentro de una conversación.
+6. Pedir confirmación antes de modificar información.
+7. Mostrar evidencia de las tools utilizadas.
+
+### Fuente de datos
+
+La fuente de datos es una base local **SQLite** con información ficticia.
+
+La base contiene:
 
 * Proveedores.
-* Requisiciones simplificadas.
+* Requisiciones.
 * Órdenes de compra.
 * Facturas.
-* Cálculo de vencimientos.
-* Pagos completos.
-* Consultas de trazabilidad.
-* Consulta de próximos vencimientos.
-* Memoria de corto plazo por sesión.
-* Confirmación explícita para escrituras.
-* Datos ficticios almacenados en SQLite.
-* Interfaz web con Streamlit.
-* Servidor MCP propio.
-* Pruebas automatizadas básicas.
+* Pagos.
 
-### Fuera de alcance
+No se utilizan datos reales ni información confidencial.
+
+### Límites
+
+La prueba de concepto no incluye:
 
 * Actualización de registros.
 * Eliminación de registros.
 * Cancelaciones.
 * Autorizaciones multinivel.
-* Usuarios y roles reales.
+* Inicio de sesión.
+* Roles y permisos reales.
 * Pagos parciales.
 * Anticipos.
 * Notas de crédito.
@@ -98,6 +93,21 @@ El asistente permite:
 * Multiempresa.
 * Auditoría productiva.
 * Integraciones con sistemas externos.
+
+Las requisiciones se crean directamente en estado `Autorizada`.
+
+Cada requisición puede tener:
+
+* Una sola descripción o partida.
+* Una sola orden de compra.
+
+Cada orden puede tener:
+
+* Una sola factura.
+
+Cada factura puede tener:
+
+* Un solo pago completo.
 
 ---
 
@@ -119,77 +129,87 @@ Servicios de negocio
 SQLite
 ```
 
-### Responsabilidad de cada componente
+Versión resumida:
+
+```text
+Streamlit
+→ Agente LangChain + OpenAI
+→ MCP
+→ SQLite
+```
+
+### Componentes
 
 #### Streamlit
 
-* Presenta la interfaz de chat.
-* Mantiene el identificador de sesión.
-* Muestra el historial.
-* Presenta las respuestas del agente.
-* Muestra evidencia y llamadas a tools.
-* Permite reiniciar la conversación.
+Responsable de:
+
+* Mostrar el chat.
+* Mantener el identificador de sesión.
+* Mostrar el historial.
+* Presentar la respuesta del agente.
+* Mostrar evidencia y tool calls.
+* Reiniciar la conversación.
+* Mostrar errores de forma comprensible.
 
 #### Agente LangChain
 
-* Interpreta las solicitudes.
-* Selecciona las tools MCP.
-* Solicita datos faltantes.
-* Mantiene referencias dentro de la sesión.
-* Pide confirmación antes de escrituras.
-* Resume los resultados obtenidos.
+Responsable de:
+
+* Interpretar la solicitud del usuario.
+* Seleccionar las tools MCP.
+* Solicitar datos faltantes.
+* Mantener referencias conversacionales.
+* Pedir confirmación antes de escrituras.
+* Resumir los resultados.
+* Evitar inventar información.
+
+#### OpenAI
+
+Se utiliza como proveedor de inferencia para el modelo de lenguaje que ejecuta el razonamiento del agente y decide qué tools utilizar.
+
+El modelo se configura mediante la variable:
+
+```env
+OPENAI_MODEL=
+```
 
 #### Servidor MCP
 
-* Expone las operaciones del dominio como tools.
-* Define parámetros tipados.
-* Valida entradas.
-* Ejecuta las reglas de negocio.
-* Devuelve respuestas estructuradas.
+El servidor MCP está construido con FastMCP.
+
+Es responsable de:
+
+* Exponer las operaciones del dominio.
+* Definir parámetros tipados.
+* Validar entradas.
+* Ejecutar reglas de negocio.
+* Controlar operaciones de escritura.
+* Devolver resultados estructurados.
 
 #### SQLite
 
-* Persiste proveedores.
-* Persiste requisiciones.
-* Persiste órdenes de compra.
-* Persiste facturas.
-* Persiste pagos.
+SQLite se utiliza para persistir los datos ficticios de la prueba de concepto.
 
 ---
 
-## Estructura del proyecto
+## Flujo funcional
 
 ```text
-asistente_compras_poc/
-├── app_streamlit.py
-├── agent_core.py
-├── mcp_server.py
-├── database.py
-├── services.py
-├── seed_data.py
-├── data/
-│   └── compras.db
-├── tests/
-│   ├── test_services.py
-│   ├── test_mcp.py
-│   └── test_agent.py
-├── requirements.txt
-├── .env.example
-├── .gitignore
-└── README.md
+Registrar proveedor
+        ↓
+Crear requisición
+        ↓
+Crear orden de compra
+        ↓
+Registrar factura
+        ↓
+Calcular vencimiento
+        ↓
+Registrar pago
+        ↓
+Consultar trazabilidad
 ```
-
-### Archivos principales
-
-| Archivo            | Responsabilidad                         |
-| ------------------ | --------------------------------------- |
-| `app_streamlit.py` | Interfaz conversacional                 |
-| `agent_core.py`    | Configuración y ejecución del agente    |
-| `mcp_server.py`    | Servidor FastMCP y definición de tools  |
-| `services.py`      | Reglas de negocio                       |
-| `database.py`      | Conexión, tablas y transacciones SQLite |
-| `seed_data.py`     | Datos ficticios para demostración       |
-| `tests/`           | Pruebas automatizadas                   |
 
 ---
 
@@ -197,24 +217,74 @@ asistente_compras_poc/
 
 ### Tools de escritura
 
-Todas requieren confirmación explícita.
+Todas las tools de escritura requieren una confirmación explícita del usuario antes de ejecutarse.
 
-| Tool                  | Descripción                                     |
-| --------------------- | ----------------------------------------------- |
-| `registrar_proveedor` | Registra un proveedor y sus condiciones de pago |
-| `crear_requisicion`   | Crea una requisición simplificada               |
-| `crear_orden_compra`  | Genera una orden desde una requisición          |
-| `registrar_factura`   | Registra una factura y calcula su vencimiento   |
-| `registrar_pago`      | Registra el pago completo de una factura        |
+| Tool                  | Propósito                                        | Entrada principal                                                      | Salida principal                    | Riesgo                                                                                  |
+| --------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
+| `registrar_proveedor` | Registrar un proveedor y su condición de pago    | Nombre, RFC, condición, días de crédito y confirmación                 | ID del proveedor creado             | Medio: crea información persistente y puede duplicar proveedores si no se valida el RFC |
+| `crear_requisicion`   | Crear una requisición simplificada               | Solicitante, área, tipo, descripción, importe, proyecto y confirmación | Folio y estado de la requisición    | Medio: crea un documento de compra                                                      |
+| `crear_orden_compra`  | Crear una orden desde una requisición autorizada | Folio de requisición, proveedor, importe y confirmación                | Folio de orden de compra            | Alto: vincula proveedor y requisición y cambia el estado del flujo                      |
+| `registrar_factura`   | Registrar una factura y calcular su vencimiento  | Orden, número, fecha, subtotal, impuestos, total y confirmación        | ID de factura, vencimiento y estado | Alto: crea una cuenta por pagar y actualiza estados                                     |
+| `registrar_pago`      | Registrar el pago completo de una factura        | Factura, fecha, importe, medio, referencia y confirmación              | ID del pago y estado final          | Alto: marca documentos como pagados                                                     |
 
 ### Tools de lectura
 
-| Tool                            | Descripción                                  |
-| ------------------------------- | -------------------------------------------- |
-| `consultar_proveedor`           | Busca un proveedor por ID, RFC o nombre      |
-| `consultar_requisicion`         | Consulta una requisición por folio           |
-| `consultar_trazabilidad_compra` | Recupera la cadena completa de una compra    |
-| `listar_pagos_por_vencer`       | Lista facturas pendientes dentro de un rango |
+| Tool                            | Propósito                                       | Entrada principal    | Salida principal                              | Riesgo                                                       |
+| ------------------------------- | ----------------------------------------------- | -------------------- | --------------------------------------------- | ------------------------------------------------------------ |
+| `consultar_proveedor`           | Buscar un proveedor                             | ID, RFC o nombre     | Datos del proveedor                           | Bajo: operación de solo lectura                              |
+| `consultar_requisicion`         | Consultar una requisición                       | Folio                | Datos y estado de la requisición              | Bajo: operación de solo lectura                              |
+| `consultar_trazabilidad_compra` | Recuperar la cadena completa de documentos      | Folio de requisición | Requisición, orden, proveedor, factura y pago | Bajo: expone información relacionada, pero no modifica datos |
+| `listar_pagos_por_vencer`       | Consultar facturas pendientes próximas a vencer | Número de días       | Lista de facturas y fechas de vencimiento     | Bajo: operación de solo lectura                              |
+
+---
+
+## Confirmación de escrituras
+
+El agente no debe ejecutar inmediatamente una operación que modifique la base de datos.
+
+El proceso obligatorio es:
+
+```text
+Solicitud del usuario
+        ↓
+Validación de datos
+        ↓
+Resumen de la operación
+        ↓
+Solicitud de confirmación
+        ↓
+Confirmación explícita
+        ↓
+Ejecución de la tool MCP
+```
+
+Ejemplo:
+
+```text
+Usuario:
+Registra al proveedor Mobiliario Central con RFC MCE010101ABC
+y 30 días de crédito.
+
+Agente:
+Se registrará Mobiliario Central con condición de crédito
+a 30 días. ¿Confirmas?
+
+Usuario:
+Sí, confirma.
+```
+
+Solo después de esa confirmación se llama la tool con:
+
+```python
+confirmar=True
+```
+
+La confirmación:
+
+* Solo aplica a la acción pendiente.
+* Solo es válida dentro de la misma sesión.
+* No debe reutilizarse para otra operación.
+* No debe provocar una escritura duplicada.
 
 ---
 
@@ -223,49 +293,50 @@ Todas requieren confirmación explícita.
 ### Proveedores
 
 * El nombre es obligatorio.
-* El RFC es obligatorio y no puede repetirse.
-* La condición de pago debe ser `contado` o `credito`.
+* El RFC es obligatorio.
+* El RFC no puede estar duplicado.
+* La condición debe ser `contado` o `credito`.
 * Un proveedor de contado debe tener cero días de crédito.
 * Un proveedor a crédito debe tener más de cero días de crédito.
 
 ### Requisiciones
 
-* Se crean directamente con estado `Autorizada`.
-* Solo tienen una descripción o partida simplificada.
-* El importe estimado debe ser mayor que cero.
-* Cada requisición puede tener una sola orden de compra.
+* Se crean directamente en estado `Autorizada`.
+* El importe debe ser mayor que cero.
+* Cada requisición puede generar una sola orden de compra.
 
 ### Órdenes de compra
 
 * La requisición debe existir.
 * La requisición debe estar autorizada.
 * El proveedor debe existir.
-* No puede existir otra orden para la misma requisición.
 * El importe debe ser mayor que cero.
+* No se puede crear una segunda orden para la misma requisición.
 
 ### Facturas
 
-* La orden de compra debe existir.
+* La orden debe existir.
 * Cada orden puede tener una sola factura.
-* La fecha debe utilizar formato ISO:
-
-```text
-AAAA-MM-DD
-```
-
-* El total debe ser consistente:
+* La fecha debe utilizar el formato `AAAA-MM-DD`.
+* El subtotal y los impuestos no pueden ser negativos.
+* El total debe ser mayor que cero.
+* Debe cumplirse:
 
 ```text
 subtotal + impuestos = total
 ```
 
-* Para proveedores de contado:
+Se permite una tolerancia mínima por redondeo.
+
+### Vencimiento
+
+Para un proveedor de contado:
 
 ```text
 fecha_vencimiento = fecha_factura
 ```
 
-* Para proveedores a crédito:
+Para un proveedor a crédito:
 
 ```text
 fecha_vencimiento = fecha_factura + dias_credito
@@ -275,9 +346,10 @@ fecha_vencimiento = fecha_factura + dias_credito
 
 * La factura debe existir.
 * La factura no debe estar pagada.
-* Solo se permiten pagos completos.
 * El importe debe coincidir con el total de la factura.
-* El medio debe pertenecer al catálogo permitido:
+* No se permiten pagos parciales.
+* La referencia es obligatoria.
+* Los medios permitidos son:
 
 ```text
 transferencia
@@ -315,9 +387,9 @@ Vencida
 Pagada
 ```
 
-Los estados se actualizan internamente cuando se crean documentos posteriores.
+### Actualización interna de estados
 
-Por ejemplo:
+Aunque no existen tools públicas para actualizar registros, las operaciones del flujo actualizan estados internamente.
 
 ```text
 crear_orden_compra
@@ -335,45 +407,135 @@ registrar_pago
 
 ---
 
-## Confirmación de operaciones
+## Memoria
 
-El agente no debe realizar una escritura inmediatamente después de recibir la solicitud.
+La aplicación mantiene memoria de corto plazo por conversación.
 
-Primero debe:
+### Identificador de sesión
 
-1. Reunir todos los datos necesarios.
-2. Resumir la operación.
-3. Solicitar confirmación.
-4. Ejecutar la tool únicamente después de recibir una confirmación explícita.
+Streamlit genera un `session_id` único para cada sesión.
+
+Este valor se utiliza como `thread_id` en la configuración del agente:
+
+```python
+config = {
+    "configurable": {
+        "thread_id": session_id
+    }
+}
+```
+
+Esto permite que el agente mantenga referencias como:
+
+```text
+esa requisición
+el proveedor anterior
+esa orden
+esa factura
+su vencimiento
+págala
+```
 
 Ejemplo:
 
 ```text
 Usuario:
-Registra al proveedor Mobiliario Central con RFC MCE010101ABC
-y 30 días de crédito.
-
-Agente:
-Se registrará Mobiliario Central con condición de crédito
-a 30 días. ¿Confirmas?
+Consulta REQ-0003.
 
 Usuario:
-Sí, confirma.
+Ahora muéstrame toda su trazabilidad.
 ```
 
-La confirmación aplica únicamente a la acción pendiente dentro de la misma sesión.
+El agente debe recordar que la segunda solicitud hace referencia a `REQ-0003`.
+
+### Implementación
+
+La memoria se implementa con:
+
+```python
+from langgraph.checkpoint.memory import InMemorySaver
+```
+
+```python
+memory = InMemorySaver()
+```
+
+### Ventana de mensajes
+
+La implementación actual conserva el historial asociado al `session_id` durante la vida del proceso.
+
+Actualmente no se aplica una ventana fija de `N` mensajes en esta PoC.
+
+Si se configura una ventana, debe documentarse aquí el valor utilizado:
+
+```text
+Ventana configurada: N mensajes
+```
+
+Por ejemplo:
+
+```text
+Ventana configurada: 20 mensajes
+```
+
+No debe declararse un valor fijo en este README si el código todavía no implementa el recorte del historial.
+
+### Limitaciones de memoria
+
+* La memoria es temporal.
+* Se reinicia cuando el proceso se detiene.
+* No se comparte entre diferentes `session_id`.
+* No es memoria de largo plazo.
+* No reemplaza la persistencia de SQLite.
+* Reiniciar la conversación desde Streamlit genera un nuevo `session_id`.
+* Si se despliega en varias instancias, cada instancia puede tener memoria independiente.
+
+---
+
+## Estructura del repositorio
+
+```text
+asistente_compras_poc/
+├── app_streamlit.py
+├── agent_core.py
+├── mcp_server.py
+├── database.py
+├── services.py
+├── seed_data.py
+├── data/
+│   └── compras.db
+├── tests/
+│   ├── test_services.py
+│   ├── test_mcp.py
+│   └── test_agent.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+| Archivo            | Responsabilidad                                       |
+| ------------------ | ----------------------------------------------------- |
+| `app_streamlit.py` | Interfaz web y estado de la sesión                    |
+| `agent_core.py`    | Modelo, prompt, memoria, tools y ejecución del agente |
+| `mcp_server.py`    | Servidor FastMCP y exposición de tools                |
+| `services.py`      | Validaciones y reglas de negocio                      |
+| `database.py`      | Conexión, tablas y transacciones SQLite               |
+| `seed_data.py`     | Inicialización de datos ficticios                     |
+| `tests/`           | Pruebas automatizadas                                 |
 
 ---
 
 ## Requisitos
 
 * Python 3.11 o superior.
-* Una clave de API de OpenAI.
-* Acceso local a los puertos utilizados por Streamlit y el servidor MCP.
+* Clave de API de OpenAI.
+* Acceso a los puertos del servidor MCP y Streamlit.
+* Git, en caso de clonar el repositorio.
 
 ---
 
-## Instalación
+## Instalación local
 
 ### 1. Clonar el repositorio
 
@@ -382,16 +544,16 @@ git clone <URL_DEL_REPOSITORIO>
 cd asistente_compras_poc
 ```
 
-### 2. Crear el entorno virtual
+### 2. Crear un entorno virtual
 
-En macOS o Linux:
+macOS o Linux:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-En Windows PowerShell:
+Windows PowerShell:
 
 ```powershell
 python -m venv .venv
@@ -413,7 +575,13 @@ Copia el archivo de ejemplo:
 cp .env.example .env
 ```
 
-Configura:
+En Windows:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Configura las siguientes variables:
 
 ```env
 OPENAI_API_KEY=tu_clave_de_openai
@@ -422,53 +590,66 @@ MCP_SERVER_URL=http://127.0.0.1:8000/mcp
 DATABASE_PATH=data/compras.db
 ```
 
+### Variables
+
+| Variable         | Propósito                                        |
+| ---------------- | ------------------------------------------------ |
+| `OPENAI_API_KEY` | Clave utilizada para invocar el modelo de OpenAI |
+| `OPENAI_MODEL`   | Modelo utilizado por el agente                   |
+| `MCP_SERVER_URL` | Dirección del servidor MCP                       |
+| `DATABASE_PATH`  | Ruta del archivo SQLite                          |
+
 No publiques el archivo `.env`.
 
----
-
-## Inicialización de la base de datos
-
-Para crear las tablas:
+### 5. Inicializar la base de datos
 
 ```bash
 python database.py
 ```
 
-Para cargar datos ficticios:
+### 6. Cargar datos ficticios
 
 ```bash
 python seed_data.py
 ```
 
-La base se creará en:
+Este paso puede omitirse si se desea iniciar con una base vacía.
 
-```text
-data/compras.db
-```
+### 7. Ejecutar el servidor MCP
 
----
-
-## Ejecución
-
-La aplicación requiere dos procesos.
-
-### Terminal 1: servidor MCP
+En una terminal:
 
 ```bash
 source .venv/bin/activate
 python mcp_server.py
 ```
 
-El servidor estará disponible en:
+En Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+python mcp_server.py
+```
+
+El endpoint local predeterminado es:
 
 ```text
 http://127.0.0.1:8000/mcp
 ```
 
-### Terminal 2: interfaz Streamlit
+### 8. Ejecutar Streamlit
+
+En una segunda terminal:
 
 ```bash
 source .venv/bin/activate
+streamlit run app_streamlit.py
+```
+
+En Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
 streamlit run app_streamlit.py
 ```
 
@@ -480,9 +661,274 @@ http://localhost:8501
 
 ---
 
-## Flujo de demostración
+## Despliegue
 
-Ejecuta los siguientes mensajes dentro de la misma conversación.
+La aplicación puede publicarse utilizando un servicio que permita ejecutar procesos Python persistentes.
+
+La arquitectura de despliegue puede utilizar dos servicios:
+
+```text
+Servicio de Streamlit
+        ↓
+MCP_SERVER_URL
+        ↓
+Servicio FastMCP
+        ↓
+Base de datos
+```
+
+También es posible ejecutar Streamlit y FastMCP dentro del mismo servicio:
+
+```text
+Contenedor o Web Service
+├── Streamlit
+├── FastMCP
+└── SQLite
+```
+
+### Configuración de `MCP_SERVER_URL`
+
+En local:
+
+```env
+MCP_SERVER_URL=http://127.0.0.1:8000/mcp
+```
+
+Si MCP está publicado como servicio independiente:
+
+```env
+MCP_SERVER_URL=https://<URL_DEL_SERVIDOR_MCP>/mcp
+```
+
+Esta variable debe configurarse en el panel de variables de entorno del hosting donde se publique Streamlit.
+
+### Ejemplo de publicación en Render
+
+Configuración sugerida:
+
+```text
+Build command:
+pip install -r requirements.txt
+
+Start command:
+bash start.sh
+```
+
+Variables de entorno:
+
+```env
+OPENAI_API_KEY=<SECRETO>
+OPENAI_MODEL=<MODELO>
+MCP_SERVER_URL=http://127.0.0.1:8000/mcp
+DATABASE_PATH=data/compras.db
+```
+
+Ejemplo de `start.sh`:
+
+```bash
+#!/usr/bin/env bash
+
+set -e
+
+python database.py
+python seed_data.py
+
+python mcp_server.py &
+
+sleep 3
+
+exec streamlit run app_streamlit.py \
+  --server.address 0.0.0.0 \
+  --server.port "${PORT:-8501}" \
+  --server.headless true
+```
+
+### Persistencia
+
+Si el hosting no conserva archivos entre reinicios, la base SQLite puede perder sus cambios.
+
+En ese escenario:
+
+* La base debe regenerarse con `seed_data.py`.
+* Los datos deben considerarse temporales.
+* La aplicación debe utilizarse únicamente como demostración.
+
+Para conservar información permanentemente sería necesario migrar la persistencia a una base administrada, por ejemplo PostgreSQL.
+
+### Despliegue actual
+
+Completar con los datos reales:
+
+```text
+Hosting de Streamlit: <RENDER / STREAMLIT CLOUD / OTRO>
+Hosting de MCP: <MISMO SERVICIO / SERVICIO INDEPENDIENTE>
+Base de datos: SQLite
+```
+
+---
+
+## Pruebas
+
+Ejecuta todas las pruebas:
+
+```bash
+pytest -q
+```
+
+Ejecuta solamente las pruebas de servicios:
+
+```bash
+pytest tests/test_services.py -q
+```
+
+Ejecuta las pruebas MCP:
+
+```bash
+pytest tests/test_mcp.py -q
+```
+
+Ejecuta las pruebas del agente:
+
+```bash
+pytest tests/test_agent.py -q
+```
+
+---
+
+## Casos de prueba
+
+### 1. Consulta directa
+
+Entrada:
+
+```text
+¿Cuál es el estado de REQ-0003?
+```
+
+Resultado esperado:
+
+* Utiliza `consultar_requisicion`.
+* Devuelve información almacenada.
+* No inventa datos.
+
+### 2. Consulta compuesta
+
+Entrada:
+
+```text
+Consulta REQ-0003 y dime si su pago está vencido.
+```
+
+Resultado esperado:
+
+* Utiliza `consultar_trazabilidad_compra`.
+* Recupera la factura.
+* Evalúa su fecha de vencimiento y estado.
+
+### 3. Memoria conversacional
+
+Primer turno:
+
+```text
+Consulta REQ-0003.
+```
+
+Segundo turno:
+
+```text
+Ahora muéstrame toda su trazabilidad.
+```
+
+Resultado esperado:
+
+* Conserva el folio de la requisición.
+* No vuelve a pedirlo.
+* Utiliza `consultar_trazabilidad_compra`.
+
+### 4. Registro con confirmación
+
+Entrada:
+
+```text
+Registra al proveedor Mobiliario Central con RFC MCE010101ABC
+y 30 días de crédito.
+```
+
+Resultado esperado:
+
+* Resume la operación.
+* Solicita confirmación.
+* No ejecuta la escritura todavía.
+
+Segundo turno:
+
+```text
+Sí, confirma.
+```
+
+Resultado esperado:
+
+* Utiliza `registrar_proveedor`.
+* Envía `confirmar=true`.
+* Devuelve el ID generado.
+
+### 5. Registro inexistente
+
+Entrada:
+
+```text
+Consulta REQ-9999.
+```
+
+Resultado esperado:
+
+* Indica que no existe.
+* No inventa resultados.
+
+### 6. Validación de factura
+
+Entrada:
+
+```text
+Registra una factura con subtotal 100, impuestos 16 y total 200.
+```
+
+Resultado esperado:
+
+* Detecta que los importes son inconsistentes.
+* No registra la factura.
+
+### 7. Operación fuera de alcance
+
+Entrada:
+
+```text
+Elimina REQ-0003.
+```
+
+Resultado esperado:
+
+* Indica que la eliminación no está soportada.
+* No intenta llamar una tool de escritura.
+
+### 8. Consulta de vencimientos
+
+Entrada:
+
+```text
+¿Qué pagos vencen en los próximos siete días?
+```
+
+Resultado esperado:
+
+* Utiliza `listar_pagos_por_vencer`.
+* Devuelve facturas pendientes dentro del rango.
+
+---
+
+## Happy path
+
+Ejecutar los siguientes mensajes dentro de la misma conversación.
 
 ### 1. Crear proveedor
 
@@ -507,7 +953,7 @@ tipo Compra operativa.
 Confirma.
 ```
 
-### 3. Crear orden de compra
+### 3. Crear orden
 
 ```text
 Crea una orden para esa requisición usando el proveedor anterior
@@ -546,7 +992,7 @@ Sí, confirma el pago.
 Muéstrame toda la trazabilidad de esa requisición.
 ```
 
-El resultado esperado es:
+Resultado esperado:
 
 ```text
 Proveedor
@@ -558,165 +1004,11 @@ Proveedor
 
 ---
 
-## Ejemplos de consulta
+## Evidencia de tools
 
-### Consultar una requisición
+Streamlit muestra las llamadas realizadas por el agente.
 
-```text
-¿Cuál es el estado de la requisición REQ-0003?
-```
-
-### Consultar trazabilidad
-
-```text
-Muéstrame toda la trazabilidad de REQ-0003.
-```
-
-### Consultar vencimiento
-
-```text
-¿Cuándo vence la factura asociada a REQ-0003?
-```
-
-### Consultar pagos próximos
-
-```text
-¿Qué pagos vencen en los próximos siete días?
-```
-
-### Consultar proveedor
-
-```text
-Busca al proveedor con RFC MCE010101ABC.
-```
-
----
-
-## Memoria conversacional
-
-La aplicación mantiene memoria de corto plazo mediante un identificador de sesión.
-
-Esto permite utilizar referencias como:
-
-```text
-esa requisición
-el proveedor anterior
-esa orden
-esa factura
-su vencimiento
-págala
-```
-
-Ejemplo:
-
-```text
-Usuario:
-Consulta REQ-0003.
-
-Usuario:
-Ahora muéstrame toda su trazabilidad.
-```
-
-Mientras se mantenga el mismo `session_id`, el agente debe conservar la referencia a `REQ-0003`.
-
-La memoria actual es temporal y se pierde cuando se reinicia el proceso.
-
----
-
-## Pruebas
-
-Ejecuta todas las pruebas:
-
-```bash
-pytest -q
-```
-
----
-
-## Escenarios mínimos de prueba
-
-### Consulta directa
-
-```text
-¿Cuál es el estado de REQ-0003?
-```
-
-Resultado esperado:
-
-* Utiliza `consultar_requisicion`.
-* Devuelve información de la base.
-* No inventa datos.
-
-### Memoria
-
-```text
-Consulta REQ-0003.
-```
-
-Después:
-
-```text
-Muéstrame toda su trazabilidad.
-```
-
-Resultado esperado:
-
-* Conserva el folio.
-* Utiliza `consultar_trazabilidad_compra`.
-
-### Registro con confirmación
-
-```text
-Registra al proveedor Tecnología Norte con RFC TNO010101ABC
-y 30 días de crédito.
-```
-
-Resultado esperado:
-
-* Resume la operación.
-* Solicita confirmación.
-* No crea el registro todavía.
-
-### Dato inexistente
-
-```text
-Consulta REQ-9999.
-```
-
-Resultado esperado:
-
-* Indica que la requisición no existe.
-* No inventa información.
-
-### Validación de factura
-
-```text
-Registra una factura con subtotal 100, impuestos 16 y total 200.
-```
-
-Resultado esperado:
-
-* Detecta la inconsistencia.
-* No registra la factura.
-
-### Fuera de alcance
-
-```text
-Elimina REQ-0003.
-```
-
-Resultado esperado:
-
-* Explica que la eliminación no está soportada.
-* No ejecuta ninguna escritura.
-
----
-
-## Evidencia y trazabilidad técnica
-
-La interfaz muestra una sección con las llamadas realizadas por el agente.
-
-La evidencia puede incluir:
+Ejemplo de tool call:
 
 ```json
 {
@@ -728,7 +1020,7 @@ La evidencia puede incluir:
 }
 ```
 
-Y el resultado devuelto:
+Ejemplo de resultado:
 
 ```json
 {
@@ -742,20 +1034,53 @@ Y el resultado devuelto:
 }
 ```
 
-Esta información permite verificar que el agente consultó datos reales en lugar de inventar una respuesta.
+Esta evidencia permite comprobar que el agente utilizó una fuente real y no generó la respuesta únicamente con el modelo de lenguaje.
+
+---
+
+## Seguridad
+
+* No publicar `.env`.
+* No publicar claves de OpenAI.
+* No subir `.streamlit/secrets.toml`.
+* Utilizar únicamente datos ficticios.
+* Utilizar consultas SQL parametrizadas.
+* No exponer una tool genérica para ejecutar SQL.
+* Validar las entradas dentro de los servicios.
+* Solicitar confirmación para toda escritura.
+* No almacenar información sensible en SQLite.
+* No mostrar secretos en capturas de pantalla.
 
 ---
 
 ## Limitaciones conocidas
 
-* La memoria no persiste después de reiniciar el proceso.
-* SQLite no está pensado para una carga productiva alta.
-* Los folios consecutivos utilizan un enfoque simplificado.
+* La memoria se pierde al reiniciar el proceso.
+* No existe un límite explícito de mensajes mientras no se implemente una ventana.
+* SQLite puede perder información en hostings con almacenamiento efímero.
 * No existe autenticación.
-* No existe autorización por roles.
+* No existen roles ni permisos.
 * No se manejan múltiples partidas.
-* No se manejan pagos parciales.
-* No se manejan archivos.
-* No existe integración contable ni bancaria.
-* El agente depende de la disponibilidad del modelo configurado.
-* La solución contiene datos exclusivamente ficticios.
+* No se permiten pagos parciales.
+* No se manejan archivos adjuntos.
+* No existe integración contable o bancaria.
+* Los folios utilizan un esquema consecutivo simplificado.
+* El comportamiento del agente depende del modelo configurado.
+* La aplicación contiene únicamente datos ficticios.
+
+---
+
+## Enlaces
+
+Reemplazar los siguientes valores con los enlaces reales del proyecto.
+
+* Aplicación pública: https://proyecto-final-integraciones.onrender.com/
+* Repositorio: https://github.com/ben-blb/proyecto_final_integraciones
+
+---
+
+## Autor
+
+* Nombre: `Benjamin Lopez Briones`
+* Materia: Estrategias de Integración
+* Proyecto: Sistema de Agentes MCP
