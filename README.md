@@ -743,28 +743,6 @@ exec streamlit run app_streamlit.py \
   --server.headless true
 ```
 
-### Persistencia
-
-Si el hosting no conserva archivos entre reinicios, la base SQLite puede perder sus cambios.
-
-En ese escenario:
-
-* La base debe regenerarse con `seed_data.py`.
-* Los datos deben considerarse temporales.
-* La aplicación debe utilizarse únicamente como demostración.
-
-Para conservar información permanentemente sería necesario migrar la persistencia a una base administrada, por ejemplo PostgreSQL.
-
-### Despliegue actual
-
-Completar con los datos reales:
-
-```text
-Hosting de Streamlit: <RENDER / STREAMLIT CLOUD / OTRO>
-Hosting de MCP: <MISMO SERVICIO / SERVICIO INDEPENDIENTE>
-Base de datos: SQLite
-```
-
 ---
 
 ## Pruebas
