@@ -62,6 +62,73 @@ with st.sidebar:
         """
     )
 
+    st.markdown(
+        """
+        **Flujo de ejemplo**
+        1. **Crear proveedor**
+
+        ```text
+        Registra al proveedor Mobiliario Central con RFC MCE010101ABC y 30 días de crédito.
+        ```
+
+        2. **Confirmar**
+
+        ```text
+        Sí, confirma.
+        ```
+
+        3. **Crear requisición**
+
+        ```text
+        Crea una requisición para mobiliario por $18,500 MXN, solicitada por Ana Torres, del área de Operaciones, tipo Compra operativa.
+        ```
+
+        4. **Confirmar**
+
+        ```text
+        Confirma.
+        ```
+
+        5. **Crear orden**
+
+        ```text
+        Crea una orden para esa requisición usando el proveedor anterior por $18,500 MXN.
+        ```
+
+        6. **Confirmar**
+
+        ```text
+        Confirma.
+        ```
+
+        7. **Registrar factura**
+
+        ```text
+        Registra la factura F-9085 para esa orden, con fecha 2026-07-26, subtotal $18,500, impuestos $2,960 y total $21,460 MXN.
+        ```
+
+        8. **Confirmar y pagar**
+
+        ```text
+        Confirma. Después registra el pago completo por transferencia, con fecha 2026-08-20 y referencia TRX-1005.
+        ```
+
+        9. **Confirmar pago**
+
+        ```text
+        Sí, confirma el pago.
+        ```
+
+        10. **Verificar**
+
+        ```text
+        Muéstrame toda la trazabilidad de esa requisición.
+        ```
+
+        Este flujo recorre proveedor → requisición → orden → factura → pago completo. 
+"""
+    )
+
 
 st.title("Asistente de Seguimiento de Compras y Pagos")
 st.caption(
