@@ -1072,8 +1072,6 @@ Esta evidencia permite comprobar que el agente utilizó una fuente real y no gen
 
 ## Enlaces
 
-Reemplazar los siguientes valores con los enlaces reales del proyecto.
-
 * Aplicación pública: https://proyecto-final-integraciones.onrender.com/
 * Repositorio: https://github.com/ben-blb/proyecto_final_integraciones
 
