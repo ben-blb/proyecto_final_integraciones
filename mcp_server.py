@@ -299,14 +299,14 @@ def main() -> None:
 
     logger.info(
         "Iniciando MCP de compras en http://%s:%s/mcp",
-        MCP_HOST,
-        MCP_PORT,
+        "127.0.0.1",
+        8000,
     )
 
     mcp.run(
         transport="http",
-        host=MCP_HOST,
-        port=MCP_PORT,
+        host="127.0.0.1",
+        port=8000,
     )
 
 
